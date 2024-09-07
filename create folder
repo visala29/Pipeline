@@ -1,0 +1,22 @@
+pipeline {
+    agent any
+
+    environment {
+        NETWORK_CREDENTIALS = credentials('your-credentials-id')  // Replace with your actual credentials ID
+    }
+
+    stages {
+        stage('Create Folder') {
+            steps {
+                script {
+                    // Accessing the network shared path using credentials stored in Jenkins
+                    bat """
+                    net use Z: \\\\network-shared-path /user:${NETWORK_CREDENTIALS_USR} ${NETWORK_CREDENTIALS_PSW}
+                    mkdir Z:\\new_folder_name
+                    net use Z: /delete
+                    """
+                }
+            }
+        }
+    }
+}
