@@ -6,14 +6,14 @@ pipeline {
     }
 
     stages {
-        stage('Create Folder') {
+        stage('Create Folder in Network Path') {
             steps {
                 script {
-                    // Accessing the network shared path using credentials stored in Jenkins
+                    // Using credentials to access the network shared path and create a folder
                     bat """
-                    net use Z: \\\\network-shared-path /user:${NETWORK_CREDENTIALS_USR} ${NETWORK_CREDENTIALS_PSW}
-                    mkdir Z:\\new_folder_name
-                    net use Z: /delete
+                    net use \\\\network-shared-path /user:${NETWORK_CREDENTIALS_USR} ${NETWORK_CREDENTIALS_PSW}
+                    mkdir \\\\network-shared-path\\new_folder_name
+                    net use \\\\network-shared-path /delete
                     """
                 }
             }
