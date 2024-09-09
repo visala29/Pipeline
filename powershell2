@@ -1,0 +1,47 @@
+pipeline {
+    agent {
+        label 'agent-machine-label' // Specify your agent machine label
+    }
+    stages {
+        stage('Create Folder on Shared Path') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'biciapps1', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                    script {
+                        def sharedPath = '\\\\network\\shared\\path'
+                        def folderName = 'New_MQ_Folder'
+
+                        powershell """
+                        \$username = '${USERNAME}'
+                        \$password = '${PASSWORD}' | ConvertTo-SecureString -AsPlainText -Force
+                        \$credential = New-Object System.Management.Automation.PSCredential(\$username, \$password)
+
+                        Write-Host "Mapping drive to ${sharedPath}"
+                        # Map the shared network path to drive Z:
+                        New-PSDrive -Name 'Z' -PSProvider FileSystem -Root '${sharedPath}' -Credential \$credential -ErrorAction Stop
+
+                        # Check if drive Z: is available
+                        if (Test-Path 'Z:') {
+                            Write-Host "Drive Z: is successfully mapped."
+                            
+                            # Check if folder exists
+                            if (-not (Test-Path -Path 'Z:\\${folderName}')) {
+                                Write-Host "Folder does not exist. Creating folder 'Z:\\${folderName}'"
+                                New-Item -Path 'Z:\\${folderName}' -ItemType Directory -ErrorAction Stop
+                                Write-Host "Folder 'Z:\\${folderName}' created successfully."
+                            } else {
+                                Write-Host "Folder 'Z:\\${folderName}' already exists."
+                            }
+                        } else {
+                            Write-Host "Failed to map drive Z:. Exiting."
+                        }
+
+                        # Remove the mapped drive
+                        Remove-PSDrive -Name 'Z'
+                        Write-Host "Drive Z: unmapped successfully."
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
