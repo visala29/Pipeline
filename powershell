@@ -1,0 +1,35 @@
+pipeline {
+    agent {
+        label 'agent-machine-label' // Specify your agent machine label
+    }
+    stages {
+        stage('Create Folder on Shared Path') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'biciapps1', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                    script {
+                        def sharedPath = '\\\\network\\shared\\path'
+                        def folderName = 'newFolder'
+
+                        // PowerShell script to create folder in shared path
+                        powershell """
+                        \$username = '${USERNAME}'
+                        \$password = '${PASSWORD}' | ConvertTo-SecureString -AsPlainText -Force
+                        \$credential = New-Object System.Management.Automation.PSCredential(\$username, \$password)
+
+                        # Map the shared network path
+                        New-PSDrive -Name 'Z' -PSProvider FileSystem -Root '${sharedPath}' -Credential \$credential
+
+                        # Check if folder exists, if not, create it
+                        if (-not (Test-Path -Path 'Z:\\${folderName}')) {
+                            New-Item -Path 'Z:\\${folderName}' -ItemType Directory
+                        }
+
+                        # Remove the mapped drive
+                        Remove-PSDrive -Name 'Z'
+                        """
+                    }
+                }
+            }
+        }
+    }
+}
