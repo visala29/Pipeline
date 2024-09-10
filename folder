@@ -1,0 +1,50 @@
+pipeline {
+    agent {
+        any {
+            customWorkspace 'Z:\\YourFolderName' // Custom workspace set to network path
+        }
+    }
+    environment {
+        // Retrieve credentials from Jenkins
+        NETWORK_CREDENTIALS = credentials('biciapps1')
+    }
+    stages {
+        stage('Map Network Drive') {
+            steps {
+                script {
+                    // Map the network drive
+                    bat """
+                        net use Z: \\\\servername\\sharedpath /user:%NETWORK_CREDENTIALS_USR% %NETWORK_CREDENTIALS_PSW%
+                    """
+                }
+            }
+        }
+        stage('Create Folder in Network Path') {
+            steps {
+                script {
+                    // Ensure folder is created in the network shared path
+                    bat """
+                        mkdir Z:\\YourFolderName
+                    """
+                }
+            }
+        }
+        stage('Perform Tasks in Custom Workspace') {
+            steps {
+                script {
+                    echo "Running in custom workspace: ${pwd()}"
+                    // Add any steps you want to perform inside the custom workspace
+                    bat 'dir'
+                }
+            }
+        }
+        stage('Cleanup') {
+            steps {
+                script {
+                    // Unmap the drive after use
+                    bat "net use Z: /delete"
+                }
+            }
+        }
+    }
+}
