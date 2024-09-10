@@ -1,0 +1,25 @@
+pipeline {
+    agent any
+    environment {
+        // Retrieve credentials from Jenkins
+        NETWORK_CREDENTIALS = credentials('biciapps1')
+    }
+    stages {
+        stage('Create Folder in Network Path') {
+            steps {
+                script {
+                    // Map the network drive (if needed)
+                    bat """
+                        net use Z: \\\\servername\\sharedpath /user:%NETWORK_CREDENTIALS_USR% %NETWORK_CREDENTIALS_PSW%
+                    """
+                    // Create folder in the network path
+                    bat """
+                        mkdir Z:\\YourFolderName
+                    """
+                    // Optional: Unmap the drive after use
+                    bat "net use Z: /delete"
+                }
+            }
+        }
+    }
+}
