@@ -1,0 +1,49 @@
+@echo off
+setlocal
+ 
+REM Set network path and directory
+set "SAVE_PATH=%NETWORK_PATH%\%QUEUE_NAME%_%DATES_TIME%"
+ 
+REM Create the directory if it does not exist
+if not exist "%SAVE_PATH%" md "%SAVE_PATH%"
+ 
+echo Message queues are cleared and saved in the below path:
+echo %SAVE_PATH%
+echo Enter any key to continue...
+set /p key=
+ 
+REM Initialize message counter
+set /a MSG_COUNTER=1
+ 
+:START_LOOP
+REM Run the command and capture the output in a temporary file
+your_command_here > output.txt
+ 
+REM Check the output file for the "Written - Files:" line
+for /f "tokens=1,2,3 delims=: " %%A in ('findstr /C:"Written - Files:" output.txt') do (
+    set "written_files=%%D"
+)
+ 
+REM Check if "Written - Files:" is 0
+if "%written_files%"=="0" (
+    echo No more messages to process.
+    goto END_SCRIPT
+)
+ 
+REM Dump the next message to a file and remove it from the queue
+dmpmqmsg -m %QUEUE_MANAGER% -i %QUEUE_NAME% -r 1 -f "%SAVE_PATH%\%QUEUE_NAME%_msg%MSG_COUNTER%.xml"
+ 
+REM Check if the dump and removal was successful
+if %ERRORLEVEL% EQU 0 (
+    echo Message %MSG_COUNTER% saved and removed from queue.
+    REM Increment message counter
+    set /a MSG_COUNTER+=1
+    goto START_LOOP
+) else (
+    echo Error occurred during message dump or removal.
+    goto END_SCRIPT
+)
+ 
+:END_SCRIPT
+echo Done processing messages.
+endlocal
